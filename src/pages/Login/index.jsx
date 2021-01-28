@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
 import './login.less'
 import logo from './images/logo.png'
-import { Form, Input, Button } from 'antd';
+import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { } from '../../api/ajax'
 import { reqLogin } from '../../api';
-
-
+import memoryUtils from '../../utils/memoryUtils'
+import storageUtils from '../../utils/storageUtils'
+import { Redirect } from 'react-router-dom';
 
 export default class Login extends Component {
 
@@ -20,22 +20,19 @@ export default class Login extends Component {
     onFinish = async (values) => {
         //console.log('Received values of form: ', values);
         const { username, password } = values
-        /*reqLogin(username, password).then(
-            response => {
-                console.log('success, data: ', response.data);
-            }).catch(err => {
-                console.log('Failed: ', err);
-            });*/
-
         //await使用
-        try {
-            const response = await reqLogin(username, password);
-            console.log('success, data: ', response.data);
-        } catch (error) {
-            console.log('Failed, error: ', error);
+        const result = await reqLogin(username, password);
+
+        const { status, data, msg } = result
+        if (status === 0) {
+            message.success('Welcome, ' + data.username)
+            memoryUtils.user = data
+            storageUtils.saveUser(data)
+            //不需要回退，否则用push            
+            this.props.history.replace('/')
+        } else {
+            message.error(msg)
         }
-
-
     }
 
     onFinishFailed = (error) => {
@@ -43,6 +40,11 @@ export default class Login extends Component {
     }
 
     render() {
+        const user = memoryUtils.user
+        if (user && user._id) {
+            //to login
+            return <Redirect to='/' />
+        }
         return (
             <div className="login">
                 <header className="login-header">
